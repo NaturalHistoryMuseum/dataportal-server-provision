@@ -116,11 +116,14 @@ function provision_1(){
   export LC_ALL=en_US.UTF-8
   locale-gen en_US.UTF-8
   dpkg-reconfigure locales
-
+  
   # Install packages
   echo "Updating and installing packages"
+  # We want postgres 9.2 - add postgres apt & key 
+  echo "deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main" > /etc/apt/sources.list.d/pgdg.list
+  wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
   apt-get update
-  apt-get install -y postgresql
+  apt-get install -y postgresql-9.2
 
   echo "Creating CKAN database"
   sudo -u postgres createuser -S -D -R $DB_USER
