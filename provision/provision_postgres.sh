@@ -104,7 +104,7 @@ fi
 function provision_1(){
   # Test we have required files in the provision folder
   if [ ! -f "$PROVISION_FOLDER/datastore.sql" ]; then
-    echo "Missing file $PROVISION_FOLDER/development.ini ; aborting." 1>&2
+    echo "Missing file $PROVISION_FOLDER/datastore.sql ; aborting." 1>&2
     exit 1
   fi
   # Ensure we have passwords and admin email
