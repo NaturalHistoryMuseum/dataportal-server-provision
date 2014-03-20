@@ -99,7 +99,7 @@ function ensure_pass(){
 #
 # Read options
 #
-while getopts "hdp:e:j:x:r:" OPTION; do
+while getopts "hdp:e:j:x:r:g:" OPTION; do
   case $OPTION in
     h)
       usage
@@ -143,7 +143,7 @@ if [ "${PROVISION_FOLDER}" = "" ]; then
     PROVISION_FOLDER="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
   fi
 fi
-
+ensure_pass DB_PASS
 
 #
 # Initial provision, step 1: install required packages

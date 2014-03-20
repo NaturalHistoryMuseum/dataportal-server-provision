@@ -8,7 +8,7 @@ DB_RO_USER=datastore_default
 DB_PASS=
 CKAN_DB_NAME=ckan_default
 DATASTORE_DB_NAME=datastore_default
-PROVISION_COUNT=1 # Keep this up to date
+PROVISION_COUNT=2 # Keep this up to date
 PROVISION_STEP=0
 
 #
@@ -135,8 +135,19 @@ function provision_1(){
 
   echo "Importing datastore dump"
   sudo -u postgres psql $DATASTORE_DB_NAME < "$PROVISION_FOLDER/datastore.sql"
+}
 
-  echo "All done."
+#
+# Add post-gis support
+#
+function provision_2(){
+  echo "Installing postgis"
+  apt-get update
+  apt-get install -y postgresql-9.1-postgis
+  sudo -u postgres psql -d ${DATASTORE_DB_NAME} -f /usr/share/postgresql/9.1/contrib/postgis-1.5/postgis.sql
+  sudo -u postgres psql -d ${DATASTORE_DB_NAME} -c "ALTER TABLE geometry_columns OWNER TO $DB_USER"
+  sudo -u postgres psql -d ${DATASTORE_DB_NAME} -c "ALTER TABLE spatial_ref_sys OWNER TO $DB_USER"
+  sudo -u postgres psql -d ${DATASTORE_DB_NAME} -f /usr/share/postgresql/9.1/contrib/postgis-1.5/spatial_ref_sys.sql
 }
 
 #
@@ -151,6 +162,7 @@ if [ ${PROVISION_STEP} -ne 0 ]; then
   eval "provision_${PROVISION_STEP}"
 elif [ ${PROVISION_VERSION} -eq 0 ]; then
   provision_1
+  provision_2
   echo ${PROVISION_COUNT} > ${PROVISION_FILE}
 elif [ ${PROVISION_VERSION} -ge ${PROVISION_COUNT} ]; then
   echo "Server already provisioned"
