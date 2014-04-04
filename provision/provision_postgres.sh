@@ -11,6 +11,16 @@ DATASTORE_DB_NAME=datastore_default
 PROVISION_COUNT=2 # Keep this up to date
 PROVISION_STEP=0
 
+# FIXME: Need to enable TCP/IP connections
+# edit /etc/postgresql/9.3/main/postgresql.conf and uncomment 'listen_addresses = '*'
+# (use localhost to enable only local connections, * or IP address for remote ones)
+# Also maybe ensure port is 5432?
+# FIXME: Enable defined remote hosts by adding entry pg_hba.conf:
+# For remote server:
+# host  ckan_default,datastore_default  ckan_default,datastore_default  10.11.12.13/32  md5
+# For dev host:
+# host all  all 10.11.12.1/32   md5
+
 #
 # usage() function to display script usage
 #
@@ -119,11 +129,11 @@ function provision_1(){
   
   # Install packages
   echo "Updating and installing packages"
-  # We want postgres 9.2 - add postgres apt & key 
+  # We want postgres 9.3 - add postgres apt & key
   echo "deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main" > /etc/apt/sources.list.d/pgdg.list
   wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
   apt-get update
-  apt-get install -y postgresql-9.2
+  apt-get install -y postgresql-9.3
 
   echo "Creating CKAN database"
   sudo -u postgres createuser -S -D -R $DB_USER
@@ -146,11 +156,11 @@ function provision_1(){
 function provision_2(){
   echo "Installing postgis"
   apt-get update
-  apt-get install -y postgresql-9.1-postgis
-  sudo -u postgres psql -d ${DATASTORE_DB_NAME} -f /usr/share/postgresql/9.1/contrib/postgis-1.5/postgis.sql
+  apt-get install -y postgresql-9.3-postgis
+  sudo -u postgres psql -d ${DATASTORE_DB_NAME} -f /usr/share/postgresql/9.3/contrib/postgis-2.1/postgis.sql
   sudo -u postgres psql -d ${DATASTORE_DB_NAME} -c "ALTER TABLE geometry_columns OWNER TO $DB_USER"
   sudo -u postgres psql -d ${DATASTORE_DB_NAME} -c "ALTER TABLE spatial_ref_sys OWNER TO $DB_USER"
-  sudo -u postgres psql -d ${DATASTORE_DB_NAME} -f /usr/share/postgresql/9.1/contrib/postgis-1.5/spatial_ref_sys.sql
+  sudo -u postgres psql -d ${DATASTORE_DB_NAME} -f /usr/share/postgresql/9.3/contrib/postgis-2.1/spatial_ref_sys.sql
 }
 
 #
