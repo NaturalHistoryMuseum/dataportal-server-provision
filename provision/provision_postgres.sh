@@ -161,6 +161,11 @@ function provision_2(){
   sudo -u postgres psql -d ${DATASTORE_DB_NAME} -c "ALTER TABLE geometry_columns OWNER TO $DB_USER"
   sudo -u postgres psql -d ${DATASTORE_DB_NAME} -c "ALTER TABLE spatial_ref_sys OWNER TO $DB_USER"
   sudo -u postgres psql -d ${DATASTORE_DB_NAME} -f /usr/share/postgresql/9.3/contrib/postgis-2.1/spatial_ref_sys.sql
+
+  sudo -u postgres psql -d ${CKAN_DB_NAME} -f /usr/share/postgresql/9.3/contrib/postgis-2.1/postgis.sql
+  sudo -u postgres psql -d ${CKAN_DB_NAME} -c "ALTER TABLE geometry_columns OWNER TO $DB_USER"
+  sudo -u postgres psql -d ${CKAN_DB_NAME} -c "ALTER TABLE spatial_ref_sys OWNER TO $DB_USER"
+  sudo -u postgres psql -d ${CKAN_DB_NAME} -f /usr/share/postgresql/9.3/contrib/postgis-2.1/spatial_ref_sys.sql
 }
 
 #
