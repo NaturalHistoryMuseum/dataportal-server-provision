@@ -187,6 +187,11 @@ function provision_2(){
   echo "Creating virtual environment"
   mkdir -p /usr/lib/ckan/default
   virtualenv /usr/lib/ckan/default
+
+  echo "Creating log directory"
+  sudo chmod -R 0777 /var/log/
+  mkdir -p /var/log/nhm/
+
 }
 
 #
