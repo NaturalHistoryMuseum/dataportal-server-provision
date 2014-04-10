@@ -100,12 +100,12 @@ function provision_1(){
   cp -r solr-4.7.1/example/solr/* /opt/solr/
   cp solr-4.7.1/example/webapps/solr.war /opt/solr/
   cp -r solr-4.7.1/example/lib/ext/* /var/lib/tomcat6/shared/
+  cp -f ${PROVISION_FOLDER}/solrconfig.xml /opt/solr/collection1/conf/solrconfig.xml
+  cp -f ${PROVISION_FOLDER}/solr.xml /etc/tomcat6/Catalina/localhost/solr.xml
 
   echo "Create SOLR data directory"
   mkdir /opt/solr/data
   chown tomcat6 /opt/solr/data/
-  cp -f ${PROVISION_FOLDER}/solrconfig.xml /opt/solr/collection1/conf/solrconfig.xml
-  cp -f ${PROVISION_FOLDER}/solr.xml /etc/tomcat6/Catalina/localhost/solr.xml
 
   update_solr_schema
 }
