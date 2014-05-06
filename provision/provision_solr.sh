@@ -73,8 +73,8 @@ function update_solr_schema(){
 
   # SOLR
   echo "Setting up SOLR"
-  mv /etc/solr/conf/schema.xml /etc/solr/conf/schema.xml.bak
-  cp ${PROVISION_FOLDER}/schema.xml /etc/solr/conf/schema.xml
+  mv /opt/solr/collection1/conf/schema.xml /opt/solr/collection1/conf/schema.xml.bak
+  cp ${PROVISION_FOLDER}/schema.xml /opt/solr/collection1/conf/schema.xml
   service tomcat6 restart
 }
 
@@ -91,7 +91,21 @@ function provision_1(){
   # Install packages
   echo "Updating and installing packages"
   apt-get update
-  apt-get install -y solr-tomcat
+  apt-get install -y tomcat6 tomcat6-admin
+
+  echo "Downloading and unpacking SOLR"
+  wget http://mirror.ox.ac.uk/sites/rsync.apache.org/lucene/solr/4.7.1/solr-4.7.1.tgz -P /tmp
+  tar -vxf /tmp/solr-4.7.1.tgz
+  mkdir /opt/solr
+  cp -r solr-4.7.1/example/solr/* /opt/solr/
+  cp solr-4.7.1/example/webapps/solr.war /opt/solr/
+  cp -r solr-4.7.1/example/lib/ext/* /var/lib/tomcat6/shared/
+  cp -f ${PROVISION_FOLDER}/solrconfig.xml /opt/solr/collection1/conf/solrconfig.xml
+  cp -f ${PROVISION_FOLDER}/solr.xml /etc/tomcat6/Catalina/localhost/solr.xml
+
+  echo "Create SOLR data directory"
+  mkdir /opt/solr/data
+  chown tomcat6 /opt/solr/data/
 
   update_solr_schema
 }
