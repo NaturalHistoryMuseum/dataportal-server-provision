@@ -5,21 +5,13 @@ PROVISION_FILE=/etc/postgres-provisioned
 PROVISION_FOLDER=
 DB_USER=ckan_default
 DB_RO_USER=datastore_default
+DB_WINDSHAFT_USER=datastore_windshaft
 DB_PASS=
 CKAN_DB_NAME=ckan_default
 DATASTORE_DB_NAME=datastore_default
+WINDSHAFT_IP=127.0.0.1
 PROVISION_COUNT=2 # Keep this up to date
 PROVISION_STEP=0
-
-# FIXME: Need to enable TCP/IP connections
-# edit /etc/postgresql/9.3/main/postgresql.conf and uncomment 'listen_addresses = '*'
-# (use localhost to enable only local connections, * or IP address for remote ones)
-# Also maybe ensure port is 5432?
-# FIXME: Enable defined remote hosts by adding entry pg_hba.conf:
-# For remote server:
-# host  ckan_default,datastore_default  ckan_default,datastore_default  10.11.12.13/32  md5
-# For dev host:
-# host all  all 10.11.12.1/32   md5
 
 #
 # usage() function to display script usage
@@ -48,6 +40,7 @@ OPTIONS:
        however when provisioning via Vagrant this might
        not be what you expect, so it is safer to set
        this.
+  -i   IP address of the windshaft server
   -x   Set the provision step to run. Note that running this WILL NOT
        UPDATE THE CURRENT PROVISION VERSION. Edit ${PROVISION_FILE}
        manually for this.
@@ -93,6 +86,9 @@ while getopts "hp:r:x:" OPTION; do
     r)
       PROVISION_FOLDER=$OPTARG
       ;;
+    i)
+      WINDSHAFT_IP=$OPTARG
+      ;;
     x)
       PROVISION_STEP=$OPTARG
       ;;
@@ -135,6 +131,12 @@ function provision_1(){
   apt-get update
   apt-get install -y postgresql-9.3
 
+  # Install config file & restart
+  echo "Setting up..."
+  cat "$PROVISION_FOLDER/postgresql.conf" > /etc/postgresql/9.3/main/postgresql.conf
+  cat "$PROVISION_FOLDER/pg_hba.conf" | sed -e "s~%DATASTORE_DB_NAME%~$DATASTORE_DB_NAME~"  -e "s~%DB_WINDSHAFT_USER%~$DB_WINDSHAFT_USER~" -e "s~%WINDSHAFT_IP%~$WINDSHAFT_IP~" > /etc/postgresql/9.3/main/pg_hba.conf
+  service postgresql restart
+
   echo "Creating CKAN database"
   sudo -u postgres createuser -S -D -R $DB_USER
   sudo -u postgres psql -c "ALTER USER $DB_USER with password '$DB_PASS'"
@@ -145,6 +147,13 @@ function provision_1(){
   sudo -u postgres createuser -S -D -R -l $DB_RO_USER 
   sudo -u postgres psql -c "ALTER USER $DB_RO_USER with password '$DB_PASS'"
   sudo -u postgres createdb -O $DB_USER $DATASTORE_DB_NAME -E UTF8 --locale=en_US.UTF-8 -T template0
+
+  # Windshaft user
+  echo "Creating windshaft user"
+  sudo -u postgres createuser -S -D -R -l ${DB_WINDSHAFT_USER}
+  sudo -u postgres psql -c "ALTER USER $DB_WINDSHAFT_USER with password '$DB_PASS'"
+  sudo -u postgres psql -d ${DATASTORE_DB_NAME} -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO $DB_WINDSHAFT_USER"
+  sudo -u postgres psql -d ${DATASTORE_DB_NAME} -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO $DB_WINDSHAFT_USER"
 
   echo "Importing datastore dump"
   sudo -u postgres psql $DATASTORE_DB_NAME < "$PROVISION_FOLDER/datastore.sql"
