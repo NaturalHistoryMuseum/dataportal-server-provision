@@ -259,7 +259,7 @@ function provision_4(){
 }
 
 #
-# Initisl provision, step 5: Set up database
+# Initial provision, step 5: Set up database
 #
 function provision_5(){
   cd /usr/lib/ckan/default
@@ -272,6 +272,57 @@ function provision_5(){
 
   echo "Build KE EMu dataset"
   paster --plugin=ckanext-nhm keemu create-datasets -c /etc/ckan/default/development.ini
+}
+
+#
+# Initial provision, step 6: Set up datapusher
+#
+function provision_5(){
+
+    # TODO: TEST THIS
+
+    echo "Installing datapusher"
+
+    apt-get install -y apache2 libapache2-mod-wsgi
+
+    # create and activate a virtualenv for datapusher
+    sudo virtualenv /usr/lib/ckan/datapusher
+    . /usr/lib/ckan/datapusher/bin/activate
+
+    # create a source directory
+    mkdir /usr/lib/ckan/datapusher/src
+
+    pip install -e 'git+https://github.com/ckan/datapusher.git#egg=datapusher'
+
+    if [ $? -ne 0 ]; then
+        echo "Failed installing datapusher ; aborting" 1>&2
+        exit 1
+    fi
+
+    #install the DataPusher and its requirements
+    pip_install_req /usr/lib/ckan/datapusher/src/datapusher
+
+    echo "Copying datapusher config files"
+
+    #copy the standard Apache config file
+    sudo cp /usr/lib/ckan/datapusher/src/datapusher/deployment/datapusher /etc/apache2/sites-available/
+
+    #copy the standard DataPusher wsgi file
+    sudo cp /usr/lib/ckan/datapusher/src/datapusher/deployment/datapusher.wsgi /etc/ckan/
+
+    #copy the standard DataPusher settings.
+    sudo cp /usr/lib/ckan/datapusher/src/datapusher/deployment/datapusher_settings.py /etc/ckan/
+
+    echo "Setting up Apache"
+
+    #open up port 8800 on Apache where the DataPusher accepts connections.
+    sudo sh -c 'echo "NameVirtualHost *:8800" >> /etc/apache2/ports.conf'
+    sudo sh -c 'echo "Listen 8800" >> /etc/apache2/ports.conf'
+
+    #enable DataPusher Apache site
+    sudo a2ensite datapusher
+    sudo service apache2 restart
+
 }
 
 #
