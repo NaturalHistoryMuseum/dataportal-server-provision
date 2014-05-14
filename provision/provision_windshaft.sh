@@ -3,7 +3,7 @@
 # Parameters
 DEV_MODE=0
 DB_HOST=127.0.0.1
-DB_USER=datastore_default
+DB_USER=datastore_windshaft
 DB_PASS=
 SYNCED_FOLDER=/vagrant
 PROVISION_FILE=/etc/windshaft-provisioned
@@ -116,7 +116,7 @@ ensure_pass DB_PASS
 #
 function provision_1(){
   apt-get update
-  apt-get install build-essential
+  apt-get install -y build-essential
   mkdir ~/build
   cd ~/build
   git clone git://github.com/joyent/node.git  
