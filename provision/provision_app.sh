@@ -152,7 +152,7 @@ function provision_1(){
   # Install packages
   echo "Updating and installing packages"
   apt-get update
-  apt-get install -y python-dev python-pip python-virtualenv python-pastescript build-essential libpq-dev libxslt1-dev libxml2-dev git-core
+  apt-get install -y python-dev python-pip python-virtualenv python-pastescript build-essential libpq-dev libxslt1-dev libxml2-dev git-core libldap2-dev libsasl2-dev libssl-dev
 }
 
 #
@@ -254,6 +254,8 @@ function provision_4(){
     pip_install_req /usr/lib/ckan/default/src/ke2sql/requirements.txt
   fi
   pip_install_req /usr/lib/ckan/default/src/ckanext-map/requirements.txt
+  pip_install_req /usr/lib/ckan/default/src/ckanext-userdatasets/requirements.txt
+  pip_install_req /usr/lib/ckan/default/src/ckanext-ldap/requirements.txt
 
   cat "$PROVISION_FOLDER/client.cfg" | sed -e "s~%DB_HOST%~$DB_HOST~" -e "s~%DB_NAME%~$DATASTORE_DB_NAME~" -e "s~%DB_USER%~$DB_USER~" -e "s~%DB_PASS%~$DB_PASS~" > /usr/lib/ckan/default/src/ke2sql/ke2sql/client.cfg
 }
@@ -277,7 +279,7 @@ function provision_5(){
 #
 # Initial provision, step 6: Set up datapusher
 #
-function provision_5(){
+function provision_6(){
 
     # TODO: TEST THIS
 
@@ -342,6 +344,7 @@ elif [ "${PROVISION_VERSION}" -eq 0 ]; then
   provision_3
   provision_4
   provision_5
+  provision_6
   echo ${PROVISION_COUNT} > ${PROVISION_FILE}
 elif [ ${PROVISION_VERSION} -ge ${PROVISION_COUNT} ]; then
   echo "Server already provisioned"
