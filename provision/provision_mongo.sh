@@ -2,7 +2,7 @@
 
 # Parameters
 PROVISION_FILE=/etc/mongo-provisioned
-PROVISION_COUNT=5 # Make sure to  update this when adding new updates!
+PROVISION_COUNT=3 # Make sure to  update this when adding new updates!
 PROVISION_FOLDER=
 PROVISION_STEP=0
 
@@ -79,6 +79,12 @@ function provision_2(){
   # TODO:
 }
 
+function provision_3(){
+  # Install mongodb
+  echo "Run API to create datastore"
+  # TODO:
+}
+
 #
 # Work out current version and apply the appropriate provisioning script.
 #
@@ -94,6 +100,7 @@ elif [ ${PROVISION_VERSION} -ge ${PROVISION_COUNT} ]; then
 elif [ ${PROVISION_VERSION} -eq 0 ]; then
   provision_1
   provision_2
+  provision_3
   echo ${PROVISION_COUNT} > ${PROVISION_FILE}
 else
   for ((i=`expr ${PROVISION_VERSION}+1`; i<=${PROVISION_COUNT}; i++)); do
