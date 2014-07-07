@@ -4,7 +4,7 @@
 DEV_MODE=0
 SYNCED_FOLDER=/vagrant
 PROVISION_FILE=/etc/app-provisioned
-PROVISION_COUNT=5 # Make sure to  update this when adding new updates!
+PROVISION_COUNT=7 # Make sure to  update this when adding new updates!
 PROVISION_FOLDER=
 PROVISION_STEP=0
 
@@ -149,10 +149,11 @@ ensure_pass DB_PASS
 # Initial provision, step 1: install required packages
 #
 function provision_1(){
+
   # Install packages
   echo "Updating and installing packages"
   apt-get update
-  apt-get install -y python-dev python-pip python-virtualenv python-pastescript build-essential libpq-dev libxslt1-dev libxml2-dev git-core libldap2-dev libsasl2-dev libssl-dev
+  apt-get install -y python-dev python-pip python-virtualenv python-pastescript build-essential libpq-dev libxslt1-dev libxml2-dev git-core mongodb libicu-dev
 }
 
 #
@@ -203,7 +204,7 @@ function provision_3(){
 
     # Install CKAN
   echo "Installing CKAN"
-  pip install -e 'git+https://github.com/NaturalHistoryMuseum/ckan.git#egg=ckan'
+  pip install -e 'git+https://github.com/NaturalHistoryMuseum/ckan.git@1251-1725-custom#egg=ckan'
   if [ $? -ne 0 ]; then
     echo "Failed installing ckan.git; aborting." 1>&2
     exit 1
@@ -247,17 +248,8 @@ function provision_4(){
 
   echo "Install CKAN NHM requirements"
   pip_install_req /usr/lib/ckan/default/src/ckanext-nhm/requirements.txt
-  if [ -f /usr/lib/ckan/default/src/keparser/requirements.txt ]; then
-    pip_install_req /usr/lib/ckan/default/src/keparser/requirements.txt
-  fi
-  if [ -f /usr/lib/ckan/default/src/ke2sql/requirements.txt ]; then
-    pip_install_req /usr/lib/ckan/default/src/ke2sql/requirements.txt
-  fi
   pip_install_req /usr/lib/ckan/default/src/ckanext-map/requirements.txt
-  pip_install_req /usr/lib/ckan/default/src/ckanext-userdatasets/requirements.txt
-  pip_install_req /usr/lib/ckan/default/src/ckanext-ldap/requirements.txt
 
-  cat "$PROVISION_FOLDER/client.cfg" | sed -e "s~%DB_HOST%~$DB_HOST~" -e "s~%DB_NAME%~$DATASTORE_DB_NAME~" -e "s~%DB_USER%~$DB_USER~" -e "s~%DB_PASS%~$DB_PASS~" > /usr/lib/ckan/default/src/ke2sql/ke2sql/client.cfg
 }
 
 #
@@ -272,16 +264,15 @@ function provision_5(){
   paster --plugin=ckan sysadmin add admin -c /etc/ckan/default/development.ini
   paster --plugin=ckan datastore set-permissions postgres -c /etc/ckan/default/development.ini
 
-  echo "Build KE EMu dataset"
-  paster --plugin=ckanext-nhm keemu create-datasets -c /etc/ckan/default/development.ini
+  # Init NHM database table - har resource id foreign key so needs to come after the core ckan initdb
+  cd /usr/lib/ckan/default/src/ckanext-nhm
+  paster --plugin=ckanext-nhm initdb -c  /vagrant/etc/default/development.ini
 }
 
 #
 # Initial provision, step 6: Set up datapusher
 #
 function provision_6(){
-
-    # TODO: TEST THIS
 
     echo "Installing datapusher"
 
@@ -292,7 +283,7 @@ function provision_6(){
     . /usr/lib/ckan/datapusher/bin/activate
 
     # create a source directory
-    mkdir /usr/lib/ckan/datapusher/src
+    mkdir -p /usr/lib/ckan/datapusher/src
 
     pip install -e 'git+https://github.com/ckan/datapusher.git#egg=datapusher'
 
@@ -302,7 +293,7 @@ function provision_6(){
     fi
 
     #install the DataPusher and its requirements
-    pip_install_req /usr/lib/ckan/datapusher/src/datapusher
+    pip_install_req /usr/lib/ckan/datapusher/src/datapusher/requirements.txt
 
     echo "Copying datapusher config files"
 
@@ -324,7 +315,15 @@ function provision_6(){
     #enable DataPusher Apache site
     sudo a2ensite datapusher
     sudo service apache2 restart
+}
 
+#
+# Initial provision, step 7: Set up logging
+#
+function provision_7(){
+  echo "Setting up logs"
+  mkdir -p /var/log/nhm
+  sudo chmod -R 0777 /var/log/nhm
 }
 
 #
@@ -345,6 +344,7 @@ elif [ "${PROVISION_VERSION}" -eq 0 ]; then
   provision_4
   provision_5
   provision_6
+  provision_7
   echo ${PROVISION_COUNT} > ${PROVISION_FILE}
 elif [ ${PROVISION_VERSION} -ge ${PROVISION_COUNT} ]; then
   echo "Server already provisioned"
