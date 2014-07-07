@@ -160,7 +160,8 @@ function provision_3(){
   else
     mkdir -p /var/www
   fi
-  [ -d /var/www/nhm-windshaft-app ] && mv /var/www/nhm-windshaft-app.${date +%F-%T}
+
+  [ -d /var/www/nhm-windshaft ] && mv /var/www/nhm-windshaft /var/www/nhm-windshaft.$(date +"%F-%T")
   git clone git://github.com/NaturalHistoryMuseum/nhm-windshaft-app.git /var/www/nhm-windshaft
   chown -R www-data:www-data /var/www/nhm-windshaft
   cd /var/www/nhm-windshaft
