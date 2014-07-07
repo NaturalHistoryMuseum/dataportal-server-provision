@@ -56,4 +56,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provision "shell",
     path: "provision/provision_windshaft.sh",
     args: "-p " + DATABASE_PASSWORD + " -d -r /vagrant/provision"
+  config.vm.provision "shell",
+    path: "provision/provision_mongo.sh",
+    args: "-r /vagrant/provision"
 end
