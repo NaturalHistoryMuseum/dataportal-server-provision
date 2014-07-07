@@ -6,6 +6,7 @@ PROVISION_FOLDER=
 PROVISION_COUNT=1 # Keep this up to date otherwise updates might get applied.
 PROVISION_STEP=0
 UPDATE=false
+SOLR_VERSION=4.7.2
 
 #
 # usage() function to display script usage
@@ -94,12 +95,12 @@ function provision_1(){
   apt-get install -y tomcat6 tomcat6-admin
 
   echo "Downloading and unpacking SOLR"
-  wget http://mirror.ox.ac.uk/sites/rsync.apache.org/lucene/solr/4.7.1/solr-4.7.1.tgz -P /tmp
-  tar -vxf /tmp/solr-4.7.1.tgz
+  wget http://mirror.ox.ac.uk/sites/rsync.apache.org/lucene/solr/${SOLR_VERSION}/solr-${SOLR_VERSION}.tgz -P /tmp
+  tar -vxf /tmp/solr-${SOLR_VERSION}.tgz
   mkdir /opt/solr
-  cp -r solr-4.7.1/example/solr/* /opt/solr/
-  cp solr-4.7.1/example/webapps/solr.war /opt/solr/
-  cp -r solr-4.7.1/example/lib/ext/* /var/lib/tomcat6/shared/
+  cp -r solr-${SOLR_VERSION}/example/solr/* /opt/solr/
+  cp solr-${SOLR_VERSION}/example/webapps/solr.war /opt/solr/
+  cp -r solr-${SOLR_VERSION}/example/lib/ext/* /var/lib/tomcat6/shared/
   cp -f ${PROVISION_FOLDER}/solrconfig.xml /opt/solr/collection1/conf/solrconfig.xml
   cp -f ${PROVISION_FOLDER}/solr.xml /etc/tomcat6/Catalina/localhost/solr.xml
 
