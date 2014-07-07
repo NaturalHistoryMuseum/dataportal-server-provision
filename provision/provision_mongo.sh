@@ -70,7 +70,7 @@ function provision_1(){
   # Update packages
   sudo apt-get update
   # And install
-  sudo apt-get install mongodb-org
+  sudo apt-get install -y mongodb-org
 }
 
 function provision_2(){
