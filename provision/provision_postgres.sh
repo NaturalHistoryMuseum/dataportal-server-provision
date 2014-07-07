@@ -26,9 +26,6 @@ database. It will:
  - Create a read only user ($DB_RO_USER) ;
  - Create the Ckan database ($CKAN_DB_NAME) ;
  - Create the datastore database ($DATASTORE_DB_NAME) ;
- - Upload the datastore.sql file in the datastore database
-   (this file must exist in the provisioning folder, see 
-   option -r)
 
 OPTIONS:
   -h   Show this message
@@ -108,45 +105,43 @@ fi
 # that is run on new server installations
 #
 function provision_1(){
-  # Test we have required files in the provision folder
-  if [ ! -f "$PROVISION_FOLDER/datastore.sql" ]; then
-    echo "Missing file $PROVISION_FOLDER/datastore.sql ; aborting." 1>&2
-    exit 1
-  fi
   # Ensure we have passwords and admin email
   ensure_pass DB_PASS "ckan database"
 
   # Fix postgres encoding issue
+  echo "Updating encoding"
+  echo export LC_ALL=en_US.UTF-8 >> /etc/bash.bashrc
+  echo export LANGUAGE=en_US.UTF-8 >> /etc/bash.bashrc
+  echo export LANG=en_US.UTF-8 >> /etc/bash.bashrc
+  export LC_ALL=en_US.UTF-8
   export LANGUAGE=en_US.UTF-8
   export LANG=en_US.UTF-8
-  export LC_ALL=en_US.UTF-8
   locale-gen en_US.UTF-8
   dpkg-reconfigure locales
-  
+  locale
+
   # Install packages
   echo "Updating and installing packages"
-  # We want postgres 9.3 - add postgres apt & key
-  echo "deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main" > /etc/apt/sources.list.d/pgdg.list
-  wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+
   apt-get update
-  apt-get install -y postgresql-9.3
+  apt-get install -y postgresql
 
   # Install config file & restart
   echo "Setting up..."
-  cat "$PROVISION_FOLDER/postgresql.conf" > /etc/postgresql/9.3/main/postgresql.conf
-  cat "$PROVISION_FOLDER/pg_hba.conf" | sed -e "s~%DATASTORE_DB_NAME%~$DATASTORE_DB_NAME~"  -e "s~%DB_WINDSHAFT_USER%~$DB_WINDSHAFT_USER~" -e "s~%WINDSHAFT_IP%~$WINDSHAFT_IP~" > /etc/postgresql/9.3/main/pg_hba.conf
+#  cat "$PROVISION_FOLDER/postgresql.conf" > /etc/postgresql/9.1/main/postgresql.conf
+  cat "$PROVISION_FOLDER/pg_hba.conf" | sed -e "s~%DATASTORE_DB_NAME%~$DATASTORE_DB_NAME~"  -e "s~%DB_WINDSHAFT_USER%~$DB_WINDSHAFT_USER~" -e "s~%WINDSHAFT_IP%~$WINDSHAFT_IP~" > /etc/postgresql/9.1/main/pg_hba.conf
   service postgresql restart
 
   echo "Creating CKAN database"
   sudo -u postgres createuser -S -D -R $DB_USER
   sudo -u postgres psql -c "ALTER USER $DB_USER with password '$DB_PASS'"
-  sudo -u postgres createdb -O $DB_USER $CKAN_DB_NAME -E UTF8 --locale=en_US.UTF-8 -T template0
+  sudo -u postgres createdb -O $DB_USER $CKAN_DB_NAME -E UTF8
 
   # Datastore
   echo "Creating datastore database"
-  sudo -u postgres createuser -S -D -R -l $DB_RO_USER 
+  sudo -u postgres createuser -S -D -R -l $DB_RO_USER
   sudo -u postgres psql -c "ALTER USER $DB_RO_USER with password '$DB_PASS'"
-  sudo -u postgres createdb -O $DB_USER $DATASTORE_DB_NAME -E UTF8 --locale=en_US.UTF-8 -T template0
+  sudo -u postgres createdb -O $DB_USER $DATASTORE_DB_NAME -E UTF8
 
   # Windshaft user
   echo "Creating windshaft user"
@@ -159,10 +154,6 @@ function provision_1(){
   sudo -u postgres -c "ALTER ROLE $DB_USER SET work_mem='4MB'"
   sudo -u postgres -c "ALTER ROLE $DB_RO_USER SET work_mem='10MB'"
   sudo -u postgres -c "ALTER ROLE $DB_WINDSHAFT_USER SET work_mem='100MB'"
-
-  # Import dump
-  echo "Importing datastore dump"
-  sudo -u postgres psql $DATASTORE_DB_NAME < "$PROVISION_FOLDER/datastore.sql"
 }
 
 #
@@ -170,17 +161,21 @@ function provision_1(){
 #
 function provision_2(){
   echo "Installing postgis"
+  sudo apt-get install -y python-software-properties
+  # Add the ubuntu gis stable repo
+  # If postgis2.1 is required, it is available in the unstable: http://trac.osgeo.org/ubuntugis/wiki/UbuntuGISRepository
+  sudo add-apt-repository -y ppa:ubuntugis/ppa
   apt-get update
-  apt-get install -y postgresql-9.3-postgis
-  sudo -u postgres psql -d ${DATASTORE_DB_NAME} -f /usr/share/postgresql/9.3/contrib/postgis-2.1/postgis.sql
+  sudo apt-get install -y postgresql-9.1-postgis-2.0
+  sudo -u postgres psql -d ${DATASTORE_DB_NAME} -f /usr/share/postgresql/9.1/contrib/postgis-2.0/postgis.sql
   sudo -u postgres psql -d ${DATASTORE_DB_NAME} -c "ALTER TABLE geometry_columns OWNER TO $DB_USER"
   sudo -u postgres psql -d ${DATASTORE_DB_NAME} -c "ALTER TABLE spatial_ref_sys OWNER TO $DB_USER"
-  sudo -u postgres psql -d ${DATASTORE_DB_NAME} -f /usr/share/postgresql/9.3/contrib/postgis-2.1/spatial_ref_sys.sql
+  sudo -u postgres psql -d ${DATASTORE_DB_NAME} -f /usr/share/postgresql/9.1/contrib/postgis-2.0/spatial_ref_sys.sql
 
-  sudo -u postgres psql -d ${CKAN_DB_NAME} -f /usr/share/postgresql/9.3/contrib/postgis-2.1/postgis.sql
+  sudo -u postgres psql -d ${CKAN_DB_NAME} -f /usr/share/postgresql/9.1/contrib/postgis-2.0/postgis.sql
   sudo -u postgres psql -d ${CKAN_DB_NAME} -c "ALTER TABLE geometry_columns OWNER TO $DB_USER"
   sudo -u postgres psql -d ${CKAN_DB_NAME} -c "ALTER TABLE spatial_ref_sys OWNER TO $DB_USER"
-  sudo -u postgres psql -d ${CKAN_DB_NAME} -f /usr/share/postgresql/9.3/contrib/postgis-2.1/spatial_ref_sys.sql
+  sudo -u postgres psql -d ${CKAN_DB_NAME} -f /usr/share/postgresql/9.1/contrib/postgis-2.0/spatial_ref_sys.sql
 }
 
 #
