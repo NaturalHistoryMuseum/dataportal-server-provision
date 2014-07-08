@@ -74,13 +74,13 @@ function provision_1(){
 }
 
 function provision_2(){
-  # Install mongodb
+  # Copy KE EMu dumps
   echo "Copy KE EMu dumps"
   # TODO:
 }
 
 function provision_3(){
-  # Install mongodb
+  # Run API to create datastore
   echo "Run API to create datastore"
   # TODO:
 }
