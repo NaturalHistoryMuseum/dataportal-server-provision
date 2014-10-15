@@ -142,6 +142,7 @@ function provision_1(){
   sudo -u postgres createuser -S -D -R -l $DB_RO_USER
   sudo -u postgres psql -c "ALTER USER $DB_RO_USER with password '$DB_PASS'"
   sudo -u postgres createdb -O $DB_USER $DATASTORE_DB_NAME -E UTF8
+  sudo -u postgres psql -c "CREATE EXTENSION citext"
 
   # Windshaft user
   echo "Creating windshaft user"
