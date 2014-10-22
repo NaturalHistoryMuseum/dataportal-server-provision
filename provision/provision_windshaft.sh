@@ -173,6 +173,7 @@ function provision_3(){
 #
 function provision_4(){
   cat "$PROVISION_FOLDER/config.js" | sed -e "s~%DB_HOST%~$DB_HOST~"  -e "s~%DB_USER%~$DB_USER~" -e "s~%DB_PASS%~$DB_PASS~" > /var/www/nhm-windshaft/config.js
+  cp "$PROVISION_FOLDER/plot.mss" /var/www/nhm-windshaft/resources/mss/plot.mss
 }
 
 #
