@@ -1,6 +1,6 @@
 var config = {
-    port: '%DB_HOST%', /* Port to the application. This is not directly Windshaft, but a proxy to queue and prioritize requests */
-    postgres_host: '127.0.0.1', //'157.140.126.26',
+    port: 4000, /* Port to the application. This is not directly Windshaft, but a proxy to queue and prioritize requests */
+    postgres_host: '%DB_HOST%',
     postgres_port: 5432,
     postgres_user: '%DB_USER%',
     postgres_pass: '%DB_PASS%',
