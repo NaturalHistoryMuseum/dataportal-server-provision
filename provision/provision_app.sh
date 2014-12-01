@@ -331,6 +331,57 @@ function provision_7(){
 }
 
 #
+# Initial provision, step 8: Set up ckanpackager
+#
+function provision_8(){
+
+    echo "Installing ckanpackager"
+
+    apt-get install -y apache2 libapache2-mod-wsgi
+
+    # create and activate a virtualenv for ckanpackager 
+    sudo virtualenv /usr/lib/ckan/ckanpackager
+    . /usr/lib/ckan/ckanpackager/bin/activate
+
+    # create a source directory
+    mkdir -p /usr/lib/ckan/ckanpackager/src
+
+    pip install -e 'git+https://github.com/NaturalHistoryMuseum/ckanpackager.git#egg=ckanpackager'
+
+    if [ $? -ne 0 ]; then
+        echo "Failed installing ckanpackager ; aborting" 1>&2
+        exit 1
+    fi
+
+    #install the requirements
+    pip_install_req /usr/lib/ckan/ckanpackager/src/ckanpackager/requirements.txt
+
+    echo "Copying ckanpackager config files"
+
+    #copy the standard Apache config file
+    sudo cp /usr/lib/ckan/ckanpackager/src/ckanpackager/deployment/ckanpackager /etc/apache2/sites-available/
+
+    #copy the standard wsgi file
+    sudo cp /usr/lib/ckan/ckanpackager/src/ckanpackager/deployment/ckanpackager.wsgi /etc/ckan/
+
+    #copy the standard settings.
+    sudo cp /usr/lib/ckan/ckanpackager/src/ckanpackager/deployment/ckanpackager_settings.py /etc/ckan/
+
+    #copy the cli defaults
+    sudo cp /usr/lib/ckan/ckanpackager/src/ckanpackager/deployment/ckancpakger-cli.json /etc/ckan/
+
+    echo "Setting up Apache"
+
+    #open up port 8765 on Apache where the DataPusher accepts connections.
+    sudo sh -c 'echo "NameVirtualHost *:8765" >> /etc/apache2/ports.conf'
+    sudo sh -c 'echo "Listen 8765" >> /etc/apache2/ports.conf'
+
+    #enable DataPusher Apache site
+    sudo a2ensite ckanpackager 
+    sudo service apache2 restart
+}
+
+#
 # Work out current version and apply the appropriate provisioning script.
 # Note that this script has 5 initial steps, rather than 1.
 #

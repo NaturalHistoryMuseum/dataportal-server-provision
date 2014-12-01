@@ -1,0 +1,6 @@
+{
+  "secret": "",
+  "api_url": "http://data.nhm.ac.uk/api/3/action/datastore_search",
+  "email": "data@nhm.ac.uk",
+  "resource_id": "" 
+}
