@@ -153,7 +153,7 @@ function provision_1(){
   # Install packages
   echo "Updating and installing packages"
   apt-get update
-  apt-get install -y python-dev python-pip python-virtualenv python-pastescript build-essential libpq-dev libxslt1-dev libxml2-dev git-core mongodb libicu-dev
+  apt-get install -y python-dev python-pip python-virtualenv python-pastescript build-essential libpq-dev libxslt1-dev libxml2-dev git-core mongodb libicu-dev libyaml-perl
 }
 
 #
@@ -204,7 +204,7 @@ function provision_3(){
 
     # Install CKAN
   echo "Installing CKAN"
-  pip install -e 'git+https://github.com/NaturalHistoryMuseum/ckan.git@1251-1725-custom#egg=ckan'
+  pip install -e 'git+https://github.com/NaturalHistoryMuseum/ckan.git#egg=ckan'
   if [ $? -ne 0 ]; then
     echo "Failed installing ckan.git; aborting." 1>&2
     exit 1
