@@ -267,10 +267,6 @@ function provision_5(){
   # Init NHM database table - har resource id foreign key so needs to come after the core ckan initdb
   cd /usr/lib/ckan/default/src/ckanext-nhm
   paster --plugin=ckanext-nhm initdb -c  /vagrant/etc/default/development.ini
-
-  # Init GA Report tables
-  cd /usr/lib/ckan/default/src/ckanext-ga-report
-  paster --plugin=ckanext-ga-report initdb -c  /vagrant/etc/default/development.ini
 }
 
 #
