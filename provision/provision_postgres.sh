@@ -152,9 +152,9 @@ function provision_1(){
   sudo -u postgres psql -d ${DATASTORE_DB_NAME} -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO $DB_WINDSHAFT_USER"
 
   # Set per-user work mem
-  sudo -u postgres -c "ALTER ROLE $DB_USER SET work_mem='4MB'"
-  sudo -u postgres -c "ALTER ROLE $DB_RO_USER SET work_mem='10MB'"
-  sudo -u postgres -c "ALTER ROLE $DB_WINDSHAFT_USER SET work_mem='100MB'"
+  sudo -u postgres psql -c "ALTER ROLE $DB_USER SET work_mem='4MB'"
+  sudo -u postgres psql -c "ALTER ROLE $DB_RO_USER SET work_mem='10MB'"
+  sudo -u postgres psql -c "ALTER ROLE $DB_WINDSHAFT_USER SET work_mem='100MB'"
 }
 
 #
