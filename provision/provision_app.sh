@@ -266,7 +266,11 @@ function provision_5(){
 
   # Init NHM database table - har resource id foreign key so needs to come after the core ckan initdb
   cd /usr/lib/ckan/default/src/ckanext-nhm
-  paster --plugin=ckanext-nhm initdb -c  /vagrant/etc/default/development.ini
+  paster --plugin=ckanext-nhm initdb -c  /etc/ckan/default/development.ini
+
+  # Create dataset type vocabularies
+  paster --plugin=ckanext-nhm dataset-type create-vocabulary -c /etc/ckan/default/development.ini
+
 }
 
 #
