@@ -1,6 +1,6 @@
 #{{resource_id}} {
-    [Centroid='true'] {marker-fill: #0000FF;}
-    [Centroid!='true'] {marker-fill: {{fill_color}};}
+    [centroid='true'] {marker-fill: #0000FF;}
+    [centroid!='true'] {marker-fill: {{fill_color}};}
     marker-opacity: 1;
     marker-width: {{marker_size}} - 1;
     marker-line-color: {{line_color}};

@@ -19,7 +19,7 @@ var config = {
         '_has_type': '{resource}."typeStatus" IS NOT NULL',
         '_has_image': '{resource}."associatedMedia" IS NOT NULL',
         '_has_lat_long': '{resource}."_geom" IS NOT NULL',
-        '_exclude_centroid': 'NOT (LOWER({resource}."Centroid"::text) = ANY(\'{{true,yes,1}}\'))'
+        '_exclude_centroid': 'NOT (LOWER({resource}."centroid"::text) = ANY(\'{{true,yes,1}}\'))'
     }
 };
 /* Don't remove this */
