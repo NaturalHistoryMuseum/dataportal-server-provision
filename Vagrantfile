@@ -14,8 +14,8 @@ CKAN_ADMIN_EMAIL = 'you@yourdomain.com'
 
 # VM Specific parameters
 VM_NAME = 'ckan-app-server'
-VM_MEMORY_LIMIT = "2048"
-VM_CPU_LIMIT = "50"
+VM_MEMORY_LIMIT = "8192"
+VM_CPU_LIMIT = "100"
 VM_IP = "10.11.12.13"
 
 
@@ -56,7 +56,4 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provision "shell",
     path: "provision/provision_windshaft.sh",
     args: "-p " + DATABASE_PASSWORD + " -d -r /vagrant/provision"
-  config.vm.provision "shell",
-    path: "provision/provision_mongo.sh",
-    args: "-r /vagrant/provision"
 end
