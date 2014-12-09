@@ -153,7 +153,7 @@ function provision_1(){
   # Install packages
   echo "Updating and installing packages"
   apt-get update
-  apt-get install -y python-dev python-pip python-virtualenv python-pastescript build-essential libpq-dev libxslt1-dev libxml2-dev git-core mongodb libicu-dev libyaml-perl
+  apt-get install -y python-dev python-pip python-virtualenv python-pastescript build-essential libpq-dev libxslt1-dev libxml2-dev git-core
 }
 
 #
@@ -232,10 +232,6 @@ function provision_3(){
 # Initial provision, step 4: Install CKAN NHM extension and requirements.
 #
 function provision_4(){
-  if [ ! -f "${PROVISION_FOLDER}/client.cfg" ]; then
-    echo "Missing file ${PROVISION_FOLDER}/client.cfg ; aborting." 1>&2
-    exit 1
-  fi
 
   cd /usr/lib/ckan/default
   . /usr/lib/ckan/default/bin/activate
