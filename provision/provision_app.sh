@@ -318,18 +318,9 @@ function provision_6(){
 }
 
 #
-# Initial provision, step 7: Set up logging
+# Initial provision, step 7: Set up ckanpackager
 #
 function provision_7(){
-  echo "Setting up logs"
-  mkdir -p /var/log/nhm
-  sudo chmod -R 0777 /var/log/nhm
-}
-
-#
-# Initial provision, step 8: Set up ckanpackager
-#
-function provision_8(){
 
     echo "Installing ckanpackager"
 
