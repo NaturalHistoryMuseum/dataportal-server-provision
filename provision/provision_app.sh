@@ -260,12 +260,15 @@ function provision_5(){
   paster --plugin=ckan sysadmin add admin -c /etc/ckan/default/development.ini
   paster --plugin=ckan datastore set-permissions postgres -c /etc/ckan/default/development.ini
 
-  # Init NHM database table - har resource id foreign key so needs to come after the core ckan initdb
+  # Init NHM database table - uses resource id foreign key so needs to come after the core ckan initdb
   cd /usr/lib/ckan/default/src/ckanext-nhm
   paster --plugin=ckanext-nhm initdb -c  /etc/ckan/default/development.ini
 
   # Create dataset type vocabularies
   paster --plugin=ckanext-nhm dataset-type create-vocabulary -c /etc/ckan/default/development.ini
+
+  # Add organisation
+  paster --plugin=ckanext-ldap ldap setup-org -c /etc/ckan/default/development.ini
 
 }
 
