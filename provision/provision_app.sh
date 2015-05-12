@@ -265,7 +265,7 @@ function provision_5(){
   paster --plugin=ckanext-nhm initdb -c  /etc/ckan/default/development.ini
 
   # Create dataset type vocabularies
-  paster --plugin=ckanext-nhm dataset-type create-vocabulary -c /etc/ckan/default/development.ini
+  paster --plugin=ckanext-nhm dataset-category create-vocabulary -c /etc/ckan/default/development.ini
 
   # Add organisation
   paster --plugin=ckanext-ldap ldap setup-org -c /etc/ckan/default/development.ini
