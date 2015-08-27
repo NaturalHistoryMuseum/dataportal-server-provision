@@ -42,18 +42,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     vb.customize ["modifyvm", :id, "--cpuexecutioncap", VM_CPU_LIMIT]
   end
 
-  # Call the provision scripts. This will set up all the services
-  # on a single VM.
-  config.vm.provision "shell",
-    path: "provision/provision_postgres.sh",
-    args: "-p " + DATABASE_PASSWORD + " -r /vagrant/provision"
-  config.vm.provision "shell",
-    path: "provision/provision_solr.sh",
-    args: "-r /vagrant/provision"
+  # Call the app provision script
+
   config.vm.provision "shell",
     path: "provision/provision_app.sh",
     args: "-p " + DATABASE_PASSWORD + " -e " + CKAN_ADMIN_EMAIL + " -j " + CKAN_ADMIN_PASSWORD + " -d -r /vagrant/provision"
-  config.vm.provision "shell",
-    path: "provision/provision_windshaft.sh",
-    args: "-p " + DATABASE_PASSWORD + " -d -r /vagrant/provision"
 end
