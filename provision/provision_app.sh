@@ -233,54 +233,6 @@ function provision_6(){
 }
 
 #
-# Initial provision, step 7: Set up datapusher
-#
-function provision_7(){
-
-    echo "Installing datapusher"
-
-    apt-get install -y apache2 libapache2-mod-wsgi
-
-    # create and activate a virtualenv for datapusher
-    sudo virtualenv /usr/lib/ckan/datapusher
-    . /usr/lib/ckan/datapusher/bin/activate
-
-    # create a source directory
-    mkdir -p /usr/lib/ckan/datapusher/src
-
-    pip install -e 'git+https://github.com/ckan/datapusher.git#egg=datapusher'
-
-    if [ $? -ne 0 ]; then
-        echo "Failed installing datapusher ; aborting" 1>&2
-        exit 1
-    fi
-
-    #install the DataPusher and its requirements
-    pip_install_req /usr/lib/ckan/datapusher/src/datapusher/requirements.txt
-
-    echo "Copying datapusher config files"
-
-    #copy the standard Apache config file
-    sudo cp /usr/lib/ckan/datapusher/src/datapusher/deployment/datapusher /etc/apache2/sites-available/
-
-    #copy the standard DataPusher wsgi file
-    sudo cp /usr/lib/ckan/datapusher/src/datapusher/deployment/datapusher.wsgi /etc/ckan/
-
-    #copy the standard DataPusher settings.
-    sudo cp /usr/lib/ckan/datapusher/src/datapusher/deployment/datapusher_settings.py /etc/ckan/
-
-    echo "Setting up Apache"
-
-    #open up port 8800 on Apache where the DataPusher accepts connections.
-    sudo sh -c 'echo "NameVirtualHost *:8800" >> /etc/apache2/ports.conf'
-    sudo sh -c 'echo "Listen 8800" >> /etc/apache2/ports.conf'
-
-    #enable DataPusher Apache site
-    sudo a2ensite datapusher
-    sudo service apache2 restart
-}
-
-#
 # Work out current version and apply the appropriate provisioning script.
 # Note that this script has 5 initial steps, rather than 1.
 #
@@ -292,14 +244,12 @@ fi
 if [ "${PROVISION_STEP}" -ne 0 ]; then
   eval "provision_${PROVISION_STEP}"
 elif [ "${PROVISION_VERSION}" -eq 0 ]; then
-#  provision_1
-#  provision_2
-#  provision_3
-#  provision_4
+  provision_1
+  provision_2
+  provision_3
+  provision_4
   provision_5
   provision_6
-  provision_7
-  provision_8
   echo ${PROVISION_COUNT} > ${PROVISION_FILE}
 elif [ ${PROVISION_VERSION} -ge ${PROVISION_COUNT} ]; then
   echo "Server already provisioned"
