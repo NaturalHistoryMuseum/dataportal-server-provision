@@ -20,3 +20,13 @@ To: /etc/postgresql/9.1/main/pg_hba.conf
 
 And ensure PG_USER and PG_PASS is set up
 
+
+RUNNING
+-------
+
+. /usr/lib/ckan/default/bin/activate
+
+paster --plugin=ckan serve -c /etc/ckan/default/development.ini
+
+
+TODO: Add apache.
