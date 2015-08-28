@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-DEV_MODE=0
+DEV_MODE=1
 SYNCED_FOLDER=/vagrant
 PROVISION_FILE=/etc/app-provisioned
 PROVISION_COUNT=6 # Make sure to update this when adding new updates!
@@ -125,8 +125,8 @@ function provision_2(){
   virtualenv /usr/lib/ckan/default
 
   echo "Creating log directory"
-  sudo chmod -R 0777 /var/log/
   mkdir -p /var/log/nhm/
+  sudo chmod -R 0777 /var/log/nhm/
 
 }
 
@@ -155,7 +155,7 @@ function provision_3(){
     echo "Enabling filestore with local storage"
     mkdir -p /var/lib/ckan/default
     # CKAN install instructions is for apache only; will not work with paste
-    chmod 0777 /var/lib/ckan/default
+    chmod -R 0777 /var/lib/ckan
   fi
 
   # WHO.INI
