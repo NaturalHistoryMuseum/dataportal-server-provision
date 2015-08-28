@@ -1,24 +1,5 @@
 #!/usr/bin/env bash
 
-# Parameters
-DEV_MODE=0
-SYNCED_FOLDER=/vagrant
-PROVISION_FILE=/etc/app-provisioned
-PROVISION_COUNT=7 # Make sure to  update this when adding new updates!
-PROVISION_FOLDER=
-PROVISION_STEP=0
-
-CKAN_ADMIN_EMAIL=
-CKAN_ADMIN_PASS=
-
-DB_USER=ckan_default
-DB_RO_USER=datastore_default
-DB_HOST=localhost
-DB_PASS=
-
-CKAN_DB_NAME=ckan_default
-DATASTORE_DB_NAME=datastore_default
-
 
 #
 # usage() function to display script usage
@@ -34,20 +15,6 @@ application server. It will:
 
 OPTIONS:
   -h   Show this message
-  -d   Enable development mode. This will:
-       - create symlinks in the Vagrant folder ;
-       - change the default values for -r
-  -p   Postgres password.
-       If password is not defined  the script will prompt
-       the user for the password.
-  -g   Postgres hostname/IP address. Defaults to localhost.
-  -v   Synced folder. Defaults to /vagrant. Only used
-       in development mode via Vagrant ;
-  -r   Path to folder containing provisioning resources.
-       In development mode, this defaults to <SYNCED_FOLDER>/provision ;
-       In normal mode, this defaults to the path of the current script.
-  -e   Ckan admin email. If not defined, user will be prompted for it.
-  -j   Ckan admin password. If not defined, user will be prompted for it ;
   -x   Set the provision step to run. Note that running this WILL NOT
        UPDATE THE CURRENT PROVISION VERSION. Edit ${PROVISION_FILE}
        manually for this.
@@ -73,30 +40,6 @@ function pip_install_req(){
 }
 
 #
-# ensure_pass ensures the given variable is filled in with
-# a password
-#
-function ensure_pass(){
-  VARNAME=$1
-  while [ "${!VARNAME}" = "" ]; do 
-    read -s -p "Please enter $2  password: " ${VARNAME}
-    echo ""
-    read -s -p "Please confirm password: " CONFIRM_PASSWORD 
-    echo ""
-    if [ "${!VARNAME}" != ${CONFIRM_PASSWORD} ]; then
-      echo "Password mismatch."
-      eval "${VARNAME}="
-    fi
-    # Ensure the password is safe for queries
-    echo "${!VARNAME}" | grep -q '^[-_+*0-9a-zA-Z]*$'
-    if [ $? -ne 0 ]; then
-      echo "Only -_+*0-9a-zA-Z allowed in password."
-      eval "${VARNAME}="
-    fi
-  done
-}
-
-#
 # Read options
 #
 while getopts "hdp:e:j:x:r:g:" OPTION; do
@@ -105,26 +48,8 @@ while getopts "hdp:e:j:x:r:g:" OPTION; do
       usage
       exit 0
       ;;
-    d)
-      DEV_MODE=1
-      ;;
-    p)
-      DB_PASS=$OPTARG
-      ;;
-    g)
-      DB_HOST=$OPTARG
-      ;;
-    v)
-      SYNCED_FOLDER=$OPTARG
-      ;;
     r)
       PROVISION_FOLDER=$OPTARG
-      ;;
-    e)
-      CKAN_ADMIN_EMAIL=$OPTARG
-      ;;
-    j)
-      CKAN_ADMIN_PASS=$OPTARG
       ;;
     x)
       PROVISION_STEP=$OPTARG
@@ -143,7 +68,9 @@ if [ "${PROVISION_FOLDER}" = "" ]; then
     PROVISION_FOLDER="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
   fi
 fi
-ensure_pass DB_PASS
+
+# Settings configuration
+source "$PROVISION_FOLDER/settings.cfg"
 
 #
 # Initial provision, step 1: install required packages
@@ -153,7 +80,8 @@ function provision_1(){
   # Install packages
   echo "Updating and installing packages"
   apt-get update
-  apt-get install -y python-dev python-pip python-virtualenv python-pastescript build-essential libpq-dev libxslt1-dev libxml2-dev git-core
+  # We need the postgres clients to be able to connect to the PG docker
+  apt-get install -y python-dev python-pip python-virtualenv python-pastescript build-essential libpq-dev libxslt1-dev libxml2-dev git-core postgresql-client-common postgresql-client-8.4 libgeos-dev
 }
 
 #
@@ -179,10 +107,10 @@ function provision_2(){
   # Config
   echo "Creating config"
   mkdir -p /etc/ckan/default
-  CKAN_DB_URL="postgresql://$DB_USER:$DB_PASS@$DB_HOST/$CKAN_DB_NAME"
-  DATASTORE_DB_URL="postgresql://$DB_USER:$DB_PASS@$DB_HOST/$DATASTORE_DB_NAME"
-  DATASTORE_DB_RO_URL="postgresql://$DB_RO_USER:$DB_PASS@$DB_HOST/$DATASTORE_DB_NAME"
-  cat "${PROVISION_FOLDER}/development.ini" | sed -e "s~%CKAN_DB_URL%~$CKAN_DB_URL~" -e "s~%DATASTORE_DB_URL%~$DATASTORE_DB_URL~" -e "s~%DATASTORE_DB_RO_URL%~$DATASTORE_DB_RO_URL~" > /etc/ckan/default/development.ini
+  CKAN_DB_URL="postgresql://$DB_USER:$DB_PASS@$DB_HOST/$DB_NAME"
+  DATASTORE_DB_URL="postgresql://$DB_USER:$DB_PASS@$DB_HOST/$DB_DATASTORE_NAME"
+  DATASTORE_DB_RO_URL="postgresql://$DB_RO_USER:$DB_PASS@$DB_HOST/$DB_DATASTORE_NAME"
+  cat "${PROVISION_FOLDER}/development.ini" | sed -e "s~%CKAN_DB_URL%~$CKAN_DB_URL~" -e "s~%DATASTORE_DB_URL%~$DATASTORE_DB_URL~" -e "s~%SOLR_HOST%~SOLR_HOST~" -e "s~%DATASTORE_DB_RO_URL%~$DATASTORE_DB_RO_URL~" > /etc/ckan/default/development.ini
 
   # Create virtual env
   echo "Creating virtual environment"
@@ -242,16 +170,50 @@ function provision_4(){
     exit 1
   fi
 
-  echo "Install CKAN NHM requirements"
+  echo "Install CKAN module requirements"
+  # We need to manually install shapely <1.3 - see https://github.com/ckan/ckanext-spatial/issues/94
+  pip install 'shapely<1.3'
+  pip_install_req /usr/lib/ckan/default/src/ckanext-spatial/pip-requirements.txt
+
+  echo "Install NHM requirements"
   pip_install_req /usr/lib/ckan/default/src/ckanext-nhm/requirements.txt
   pip_install_req /usr/lib/ckan/default/src/ckanext-map/requirements.txt
+  pip_install_req /usr/lib/ckan/default/src/ckanext-doi/requirements.txt
+  pip_install_req /usr/lib/ckan/default/src/ckanext-ldap/requirements.txt
 
 }
 
 #
-# Initial provision, step 5: Set up database
+# Initial provision, step 5: Install CKAN NHM extension and requirements.
 #
 function provision_5(){
+
+cat << EOF | PGPASSWORD=asdf psql -h $DB_HOST -U $PG_USER
+    -- Create the database user:
+    CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';
+    -- Create the database:
+    CREATE DATABASE $DB_NAME WITH OWNER $DB_USER;
+    -- Create the datastore:
+    CREATE USER $DB_RO_USER WITH PASSWORD '$DB_PASS';
+    CREATE DATABASE $DB_DATASTORE_NAME WITH OWNER $DB_USER;
+    -- CREATE EXTENSION citext
+    -- Create windshaft user
+    CREATE USER $DB_WINDSHAFT_USER WITH PASSWORD '$DB_PASS';
+    GRANT SELECT ON ALL TABLES IN SCHEMA public TO $DB_WINDSHAFT_USER;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO $DB_WINDSHAFT_USER;
+    -- Set per-user work mem
+    ALTER ROLE $DB_USER SET work_mem='4MB';
+    ALTER ROLE $DB_RO_USER SET work_mem='10MB';
+    ALTER ROLE $DB_WINDSHAFT_USER SET work_mem='100MB';
+EOF
+
+}
+
+
+#
+# Initial provision, step 6: Set up database
+#
+function provision_6(){
   cd /usr/lib/ckan/default
   . /usr/lib/ckan/default/bin/activate
   echo "Init databases"
@@ -271,105 +233,105 @@ function provision_5(){
   paster --plugin=ckanext-ldap ldap setup-org -c /etc/ckan/default/development.ini
 
 }
-
 #
-# Initial provision, step 6: Set up datapusher
+##
+## Initial provision, step 6: Set up datapusher
+##
+#function provision_6(){
 #
-function provision_6(){
-
-    echo "Installing datapusher"
-
-    apt-get install -y apache2 libapache2-mod-wsgi
-
-    # create and activate a virtualenv for datapusher
-    sudo virtualenv /usr/lib/ckan/datapusher
-    . /usr/lib/ckan/datapusher/bin/activate
-
-    # create a source directory
-    mkdir -p /usr/lib/ckan/datapusher/src
-
-    pip install -e 'git+https://github.com/ckan/datapusher.git#egg=datapusher'
-
-    if [ $? -ne 0 ]; then
-        echo "Failed installing datapusher ; aborting" 1>&2
-        exit 1
-    fi
-
-    #install the DataPusher and its requirements
-    pip_install_req /usr/lib/ckan/datapusher/src/datapusher/requirements.txt
-
-    echo "Copying datapusher config files"
-
-    #copy the standard Apache config file
-    sudo cp /usr/lib/ckan/datapusher/src/datapusher/deployment/datapusher /etc/apache2/sites-available/
-
-    #copy the standard DataPusher wsgi file
-    sudo cp /usr/lib/ckan/datapusher/src/datapusher/deployment/datapusher.wsgi /etc/ckan/
-
-    #copy the standard DataPusher settings.
-    sudo cp /usr/lib/ckan/datapusher/src/datapusher/deployment/datapusher_settings.py /etc/ckan/
-
-    echo "Setting up Apache"
-
-    #open up port 8800 on Apache where the DataPusher accepts connections.
-    sudo sh -c 'echo "NameVirtualHost *:8800" >> /etc/apache2/ports.conf'
-    sudo sh -c 'echo "Listen 8800" >> /etc/apache2/ports.conf'
-
-    #enable DataPusher Apache site
-    sudo a2ensite datapusher
-    sudo service apache2 restart
-}
-
+#    echo "Installing datapusher"
 #
-# Initial provision, step 7: Set up ckanpackager
+#    apt-get install -y apache2 libapache2-mod-wsgi
 #
-function provision_7(){
-
-    echo "Installing ckanpackager"
-
-    apt-get install -y apache2 libapache2-mod-wsgi
-
-    # create and activate a virtualenv for ckanpackager 
-    sudo virtualenv /usr/lib/ckan/ckanpackager
-    . /usr/lib/ckan/ckanpackager/bin/activate
-
-    # create a source directory
-    mkdir -p /usr/lib/ckan/ckanpackager/src
-
-    pip install -e 'git+https://github.com/NaturalHistoryMuseum/ckanpackager.git#egg=ckanpackager'
-
-    if [ $? -ne 0 ]; then
-        echo "Failed installing ckanpackager ; aborting" 1>&2
-        exit 1
-    fi
-
-    #install the requirements
-    pip_install_req /usr/lib/ckan/ckanpackager/src/ckanpackager/requirements.txt
-
-    echo "Copying ckanpackager config files"
-
-    #copy the standard Apache config file
-    sudo cp /usr/lib/ckan/ckanpackager/src/ckanpackager/deployment/ckanpackager /etc/apache2/sites-available/
-
-    #copy the standard wsgi file
-    sudo cp /usr/lib/ckan/ckanpackager/src/ckanpackager/deployment/ckanpackager.wsgi /etc/ckan/
-
-    #copy the standard settings.
-    sudo cp /usr/lib/ckan/ckanpackager/src/ckanpackager/deployment/ckanpackager_settings.py /etc/ckan/
-
-    #copy the cli defaults
-    sudo cp /usr/lib/ckan/ckanpackager/src/ckanpackager/deployment/ckancpakger-cli.json /etc/ckan/
-
-    echo "Setting up Apache"
-
-    #open up port 8765 on Apache where the DataPusher accepts connections.
-    sudo sh -c 'echo "NameVirtualHost *:8765" >> /etc/apache2/ports.conf'
-    sudo sh -c 'echo "Listen 8765" >> /etc/apache2/ports.conf'
-
-    #enable DataPusher Apache site
-    sudo a2ensite ckanpackager 
-    sudo service apache2 restart
-}
+#    # create and activate a virtualenv for datapusher
+#    sudo virtualenv /usr/lib/ckan/datapusher
+#    . /usr/lib/ckan/datapusher/bin/activate
+#
+#    # create a source directory
+#    mkdir -p /usr/lib/ckan/datapusher/src
+#
+#    pip install -e 'git+https://github.com/ckan/datapusher.git#egg=datapusher'
+#
+#    if [ $? -ne 0 ]; then
+#        echo "Failed installing datapusher ; aborting" 1>&2
+#        exit 1
+#    fi
+#
+#    #install the DataPusher and its requirements
+#    pip_install_req /usr/lib/ckan/datapusher/src/datapusher/requirements.txt
+#
+#    echo "Copying datapusher config files"
+#
+#    #copy the standard Apache config file
+#    sudo cp /usr/lib/ckan/datapusher/src/datapusher/deployment/datapusher /etc/apache2/sites-available/
+#
+#    #copy the standard DataPusher wsgi file
+#    sudo cp /usr/lib/ckan/datapusher/src/datapusher/deployment/datapusher.wsgi /etc/ckan/
+#
+#    #copy the standard DataPusher settings.
+#    sudo cp /usr/lib/ckan/datapusher/src/datapusher/deployment/datapusher_settings.py /etc/ckan/
+#
+#    echo "Setting up Apache"
+#
+#    #open up port 8800 on Apache where the DataPusher accepts connections.
+#    sudo sh -c 'echo "NameVirtualHost *:8800" >> /etc/apache2/ports.conf'
+#    sudo sh -c 'echo "Listen 8800" >> /etc/apache2/ports.conf'
+#
+#    #enable DataPusher Apache site
+#    sudo a2ensite datapusher
+#    sudo service apache2 restart
+#}
+#
+##
+## Initial provision, step 7: Set up ckanpackager
+##
+#function provision_7(){
+#
+#    echo "Installing ckanpackager"
+#
+#    apt-get install -y apache2 libapache2-mod-wsgi
+#
+#    # create and activate a virtualenv for ckanpackager
+#    sudo virtualenv /usr/lib/ckan/ckanpackager
+#    . /usr/lib/ckan/ckanpackager/bin/activate
+#
+#    # create a source directory
+#    mkdir -p /usr/lib/ckan/ckanpackager/src
+#
+#    pip install -e 'git+https://github.com/NaturalHistoryMuseum/ckanpackager.git#egg=ckanpackager'
+#
+#    if [ $? -ne 0 ]; then
+#        echo "Failed installing ckanpackager ; aborting" 1>&2
+#        exit 1
+#    fi
+#
+#    #install the requirements
+#    pip_install_req /usr/lib/ckan/ckanpackager/src/ckanpackager/requirements.txt
+#
+#    echo "Copying ckanpackager config files"
+#
+#    #copy the standard Apache config file
+#    sudo cp /usr/lib/ckan/ckanpackager/src/ckanpackager/deployment/ckanpackager /etc/apache2/sites-available/
+#
+#    #copy the standard wsgi file
+#    sudo cp /usr/lib/ckan/ckanpackager/src/ckanpackager/deployment/ckanpackager.wsgi /etc/ckan/
+#
+#    #copy the standard settings.
+#    sudo cp /usr/lib/ckan/ckanpackager/src/ckanpackager/deployment/ckanpackager_settings.py /etc/ckan/
+#
+#    #copy the cli defaults
+#    sudo cp /usr/lib/ckan/ckanpackager/src/ckanpackager/deployment/ckancpakger-cli.json /etc/ckan/
+#
+#    echo "Setting up Apache"
+#
+#    #open up port 8765 on Apache where the DataPusher accepts connections.
+#    sudo sh -c 'echo "NameVirtualHost *:8765" >> /etc/apache2/ports.conf'
+#    sudo sh -c 'echo "Listen 8765" >> /etc/apache2/ports.conf'
+#
+#    #enable DataPusher Apache site
+#    sudo a2ensite ckanpackager
+#    sudo service apache2 restart
+#}
 
 #
 # Work out current version and apply the appropriate provisioning script.
@@ -389,7 +351,7 @@ elif [ "${PROVISION_VERSION}" -eq 0 ]; then
   provision_4
   provision_5
   provision_6
-  provision_7
+#  provision_7
   echo ${PROVISION_COUNT} > ${PROVISION_FILE}
 elif [ ${PROVISION_VERSION} -ge ${PROVISION_COUNT} ]; then
   echo "Server already provisioned"

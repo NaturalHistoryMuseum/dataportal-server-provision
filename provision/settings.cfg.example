@@ -1,0 +1,18 @@
+# Config file
+DEV_MODE=0
+SYNCED_FOLDER=/vagrant
+PROVISION_FILE=/etc/app-provisioned
+PROVISION_COUNT=7 # Make sure to  update this when adding new updates!
+PROVISION_FOLDER=
+PROVISION_STEP=0
+
+CKAN_ADMIN_EMAIL=
+CKAN_ADMIN_PASS=
+
+DB_USER=ckan_default
+DB_RO_USER=datastore_default
+DB_HOST=localhost
+DB_PASS=
+
+CKAN_DB_NAME=ckan_default
+DATASTORE_DB_NAME=datastore_default

@@ -1,5 +1,6 @@
 # The datastore.sql file should be generated and not added to the repo
 /provision/datastore.sql
+*.cfg
 
 # This folders are created when deploying a Vagrant VM
 /etc/
