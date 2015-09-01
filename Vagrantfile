@@ -16,7 +16,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box_url = "http://files.vagrantup.com/precise64.box"
 
   # Ensure synced folder is over NFS, as it is quite slow otherwise
-  # config.vm.synced_folder ".", "/vagrant", :nfs => true
+  config.vm.synced_folder ".", "/vagrant", :nfs => true
   config.vm.synced_folder "./src", "/usr/lib/ckan/default/src", :nfs => true
 
   config.vm.network :private_network, ip: VM_IP

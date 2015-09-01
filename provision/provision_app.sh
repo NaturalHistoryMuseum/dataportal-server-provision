@@ -189,7 +189,7 @@ function provision_4(){
 }
 
 #
-# Initial provision, step 6: Set up database
+# Initial provision, step 5: Set up database
 #
 function provision_5(){
   cd /usr/lib/ckan/default
@@ -215,6 +215,13 @@ function provision_5(){
 }
 
 #
+# Initial provision, step 6: Set up bash login
+#
+function provision_6(){
+echo "Creating bash login $PROVISION_FOLDER"
+    cp "$PROVISION_FOLDER/.bash_login" /home/vagrant/
+}
+#
 # Work out current version and apply the appropriate provisioning script.
 # Note that this script has 5 initial steps, rather than 1.
 #
@@ -226,11 +233,12 @@ fi
 if [ "${PROVISION_STEP}" -ne 0 ]; then
   eval "provision_${PROVISION_STEP}"
 elif [ "${PROVISION_VERSION}" -eq 0 ]; then
-  provision_1
-  provision_2
-  provision_3
-  provision_4
-  provision_5
+#  provision_1
+#  provision_2
+#  provision_3
+#  provision_4
+#  provision_5
+  provision_6
   echo ${PROVISION_COUNT} > ${PROVISION_FILE}
 elif [ ${PROVISION_VERSION} -ge ${PROVISION_COUNT} ]; then
   echo "Server already provisioned"
