@@ -17,7 +17,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # Ensure synced folder is over NFS, as it is quite slow otherwise
   config.vm.synced_folder ".", "/vagrant", :nfs => true
-  config.vm.synced_folder "./src", "/usr/lib/ckan/default/src", :nfs => true
 
   config.vm.network :private_network, ip: VM_IP
 
