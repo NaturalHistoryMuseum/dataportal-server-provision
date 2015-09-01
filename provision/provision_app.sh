@@ -226,11 +226,11 @@ fi
 if [ "${PROVISION_STEP}" -ne 0 ]; then
   eval "provision_${PROVISION_STEP}"
 elif [ "${PROVISION_VERSION}" -eq 0 ]; then
-  provision_1
-  provision_2
+#  provision_1
+#  provision_2
   provision_3
   provision_4
-  provision_5
+#  provision_5
   echo ${PROVISION_COUNT} > ${PROVISION_FILE}
 elif [ ${PROVISION_VERSION} -ge ${PROVISION_COUNT} ]; then
   echo "Server already provisioned"
