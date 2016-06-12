@@ -29,7 +29,7 @@ function usage(){
 This script provisions a server to host the NHM data portal
 application server. It will:
 - Install CKAN from the NHM git clone, and it's dependencies ;
-- Install the NHM Ckan extention, and it's dependencies ;
+- Install the NHM Ckan extension, and it's dependencies ;
 
 
 OPTIONS:
