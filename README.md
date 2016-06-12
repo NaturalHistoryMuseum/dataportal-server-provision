@@ -9,7 +9,7 @@ CKAN data portal. There are scripts for provisioning:
 
 - The postgres database server ;
 - The solr server ;
-- The ckan application server (including the NHM specific extentions).
+- The ckan application server (including the NHM specific extensions).
 
 Notes
 -----
